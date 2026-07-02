@@ -1,0 +1,26 @@
+# Compiled files
+*.o
+*.out
+*.exe
+*.dll
+*.so
+
+# Build directories
+build/
+cmake-build-debug/
+cmake-build-release/
+
+# IDE files
+.vscode/
+.idea/
+*.vcxproj
+*.sln
+
+# Large data files (important for your project!)
+*.tsv
+*.tsv.gz
+data/
+
+# OS files
+.DS_Store
+Thumbs.db
