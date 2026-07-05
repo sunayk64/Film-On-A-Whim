@@ -1,79 +1,162 @@
-#include <iostream> 
-#include <fstream>
+#include <iostream>
 #include <algorithm>
-using namespace std; 
+#include <vector>
+#include "DataLoader.h"
+#include "Movie.h"
 
-void Menu(bool isHeap) {
-   string input;
-    bool validGenre;
-   string genres[23] = {"action","adventure","animation","biography","comedy","crime","documentary","drama","family",
-                    "fantasy","film-noir","history","horror","music","musical","mystery","news","romance","sci-fi",
-                    "sport","thriller","war","western",};
-   cout << "Film On a Whim \n " << endl;
-    for(string i:genres) {
-        cout << i << ", ";
-    }
-    cout << "\n" << endl;
-    while (true) {
-        cout << " Please enter a genre of the movie you would like to watch:" << endl;
-        getline(cin, input);
-        validGenre = false;
-        for (int i = 0; i < 23; i++) {
-            if (input == genres[i])
-                validGenre = true;
+using namespace std;
+
+string toLowerCase(string text) {
+    transform(text.begin(), text.end(), text.begin(), ::tolower);
+    return text;
+}
+
+void printHeader() {
+    cout << "\n========================================\n";
+    cout << "          *** Film on a Whim ***        \n";
+    cout << "========================================\n";
+}
+
+void showAbout() {
+    printHeader();
+    cout << "\nFilm on a Whim helps users find random movie recommendations\n";
+    cout << "based on a genre and IMDb rating range.\n\n";
+    cout << "For the final project, we are comparing:\n";
+    cout << "- Custom Max Heap\n";
+    cout << "- Custom B+ Tree\n";
+}
+
+bool hasGenre(const Movie& movie, string searchGenre) {
+    for (string genre : movie.genres) {
+        if (toLowerCase(genre) == searchGenre) {
+            return true;
         }
-        if (!validGenre) {
-            cout << "Invalid Genre. Please enter again." << endl;
+    }
+    return false;
+}
+
+bool isValidGenre(string genre) {
+    string validGenres[23] = {
+        "action","adventure","animation","biography","comedy","crime",
+        "documentary","drama","family","fantasy","film-noir","history",
+        "horror","music","musical","mystery","news","romance","sci-fi",
+        "sport","thriller","war","western"
+    };
+
+    for (string validGenre : validGenres) {
+        if (genre == validGenre) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void findMovies(const vector<Movie>& movies) {
+    string input;
+    string genre;
+    double minRating;
+    double maxRating;
+
+    printHeader();
+
+    cout << "\nAvailable genres:\n";
+    cout << "action, adventure, animation, biography, comedy, crime,\n";
+    cout << "documentary, drama, family, fantasy, horror, mystery,\n";
+    cout << "romance, sci-fi, sport, thriller, war, western\n";
+
+    while (true) {
+        cout << "\nEnter genre: ";
+        getline(cin, input);
+        input = toLowerCase(input);
+
+        if (isValidGenre(input)) {
+            genre = input;
+            break;
+        }
+
+        cout << "Invalid genre. Try again.\n";
+    }
+
+    cout << "Minimum rating: ";
+    getline(cin, input);
+    minRating = stod(input);
+
+    cout << "Maximum rating: ";
+    getline(cin, input);
+    maxRating = stod(input);
+
+    cout << "\nSearching for " << genre << " movies rated ";
+    cout << minRating << " to " << maxRating << "...\n\n";
+
+    /*
+        for integration:
+        This is where the heap and B+ tree search results will go.
+    */
+
+    int count = 0;
+
+    // Temporary linear search just to prove the menu and data work
+    for (const Movie& movie : movies) {
+        if (hasGenre(movie, genre) &&
+            movie.rating >= minRating &&
+            movie.rating <= maxRating) {
+
+            cout << count + 1 << ". " << movie.title
+                 << " (" << movie.year << ")"
+                 << " | Rating: " << movie.rating
+                 << " | Votes: " << movie.numVotes << endl;
+
+            count++;
+
+            if (count == 5) {
+                break;
+            }
+        }
+    }
+
+    if (count == 0) {
+        cout << "No matching movies found.\n";
+    }
+}
+
+void mainMenu(const vector<Movie>& movies) {
+    string input;
+
+    while (true) {
+        printHeader();
+        cout << "1. Find Movies\n";
+        cout << "2. About\n";
+        cout << "3. Exit\n";
+        cout << "\nEnter your choice: ";
+
+        getline(cin, input);
+
+        if (input == "1") {
+            findMovies(movies);
+        }
+        else if (input == "2") {
+            showAbout();
+        }
+        else if (input == "3") {
+            cout << "\nThank you for using Film on a Whim. Goodbye!\n";
+            break;
         }
         else {
-            break;
+            cout << "Invalid input. Please enter 1, 2, or 3.\n";
         }
-    }
-    string genre = input;
-    float rating;
-    while (true) {
-        cout << "Now please enter the minimum rating for the movie(0-10):" << endl;
+
+        cout << "\nPress Enter to return to the main menu...";
         getline(cin, input);
-
-        try {
-            rating = stof(input);
-            if (rating < 0.0f || rating > 10.0f)
-                throw out_of_range("Rating must be between 0 and 10");
-            break;
-        }
-        catch (invalid_argument& e) {
-            cout << "Invalid input. Please enter a number.\n";
-        }
-        catch (out_of_range& e) {
-            cout << e.what() << "\n";
-        }
     }
-
-    cout << "Searching for a " << genre << " movie with minimum rating of " << rating << "." << endl;
-    // logic for searching, either heap or hashmap.
-
 }
 
+int main() {
+    vector<Movie> movies = loadMoviesFromCSV("Movies.csv");
 
+    cout << "Loaded " << movies.size() << " movies successfully.\n";
 
-void mainMenu() {
-    string input;
-    cout << "enter the number for the correct options" << endl;
-    cout << "Would you like to use a (1)Heap or a (2)HashMap?" << endl;
-    getline(cin, input);
-    if(input == "1")
-        Menu(true);
-    else if(input == "2")
-        Menu(false);
-    else
-        cout << "invalid input, please enter a valid option" << endl;
-        mainMenu();
-}
+    mainMenu(movies);
 
-
-
-int main() { 
-    mainMenu();
-
-    return 0; 
+    return 0;
 }
