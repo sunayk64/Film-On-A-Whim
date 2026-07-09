@@ -1,10 +1,14 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <random>
 #include "DataLoader.h"
 #include "Movie.h"
+#include "MaxHeap.h"
 
 using namespace std;
+
+const int RESULT_COUNT = 5; // how many movies to actually show the user
 
 string toLowerCase(string text) {
     transform(text.begin(), text.end(), text.begin(), ::tolower);
@@ -21,9 +25,10 @@ void showAbout() {
     printHeader();
     cout << "\nFilm on a Whim helps users find random movie recommendations\n";
     cout << "based on a genre and IMDb rating range.\n\n";
-    cout << "For the final project, we are comparing:\n";
-    cout << "- Custom Max Heap\n";
-    cout << "- Custom B+ Tree\n";
+    cout << "Matching movies are loaded into a custom Max Heap so we can\n";
+    cout << "efficiently retrieve every result within your chosen genre\n";
+    cout << "and rating range. We then randomly select five of them so\n";
+    cout << "you get a actual random recommendation.\n";
 }
 
 bool hasGenre(const Movie& movie, string searchGenre) {
@@ -62,8 +67,9 @@ void findMovies(const vector<Movie>& movies) {
 
     cout << "\nAvailable genres:\n";
     cout << "action, adventure, animation, biography, comedy, crime,\n";
-    cout << "documentary, drama, family, fantasy, horror, mystery,\n";
-    cout << "romance, sci-fi, sport, thriller, war, western\n";
+    cout << "documentary, drama, family, fantasy, film-noir, history,\n";
+    cout << "horror, music, musical, mystery, news, romance, sci-fi,\n";
+    cout << "sport, thriller, war, western\n";
 
     while (true) {
         cout << "\nEnter genre: ";
@@ -78,45 +84,67 @@ void findMovies(const vector<Movie>& movies) {
         cout << "Invalid genre. Try again.\n";
     }
 
-    cout << "Minimum rating: ";
-    getline(cin, input);
-    minRating = stod(input);
+    while (true) {
+        cout << "Minimum rating: ";
+        getline(cin, input);
+        try {
+            minRating = stod(input);
+            break;
+        } catch (...) {
+            cout << "Please enter a valid number.\n";
+        }
+    }
 
-    cout << "Maximum rating: ";
-    getline(cin, input);
-    maxRating = stod(input);
+    while (true) {
+        cout << "Maximum rating: ";
+        getline(cin, input);
+        try {
+            maxRating = stod(input);
+            break;
+        } catch (...) {
+            cout << "Please enter a valid number.\n";
+        }
+    }
 
     cout << "\nSearching for " << genre << " movies rated ";
     cout << minRating << " to " << maxRating << "...\n\n";
 
-    /*
-        for integration:
-        This is where the heap and B+ tree search results will go.
-    */
+    // Build a MaxHeap of every movie that matches the genre and rating range.
+    MaxHeap matchHeap;
+    int matchCount = 0;
 
-    int count = 0;
-
-    // Temporary linear search just to prove the menu and data work
     for (const Movie& movie : movies) {
         if (hasGenre(movie, genre) &&
             movie.rating >= minRating &&
             movie.rating <= maxRating) {
-
-            cout << count + 1 << ". " << movie.title
-                 << " (" << movie.year << ")"
-                 << " | Rating: " << movie.rating
-                 << " | Votes: " << movie.numVotes << endl;
-
-            count++;
-
-            if (count == 5) {
-                break;
-            }
+            matchHeap.insert(movie);
+            matchCount++;
         }
     }
 
-    if (count == 0) {
+    if (matchCount == 0) {
         cout << "No matching movies found.\n";
+        return;
+    }
+
+    // Drain the heap into a rating-sorted vector covering the entire matched range.
+    vector<Movie> pool;
+
+    while (!matchHeap.isEmpty()) {
+        pool.push_back(matchHeap.extractMax());
+    }
+
+    // Randomly shuffle across the full range so selections aren't skewed toward the top.
+    static mt19937 rng(random_device{}());
+    shuffle(pool.begin(), pool.end(), rng);
+
+    int showCount = min(RESULT_COUNT, static_cast<int>(pool.size()));
+
+    for (int i = 0; i < showCount; i++) {
+        cout << i + 1 << ". " << pool[i].title
+             << " (" << pool[i].year << ")"
+             << " | Rating: " << pool[i].rating
+             << " | Votes: " << pool[i].numVotes << endl;
     }
 }
 
