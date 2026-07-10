@@ -4,16 +4,20 @@
 #include <random>
 #include "DataLoader.h"
 #include "Movie.h"
+#include "btree.h"
 #include "MaxHeap.h"
 
 using namespace std;
 
 const int RESULT_COUNT = 5; // how many movies to actually show the user
 
-string toLowerCase(string text) {
-    transform(text.begin(), text.end(), text.begin(), ::tolower);
-    return text;
-}
+
+vector<string> validGenres = {
+    "action","adventure","animation","biography","comedy","crime",
+    "documentary","drama","family","fantasy","film-noir","history",
+    "horror","music","musical","mystery","news","romance","sci-fi",
+    "sport","thriller","war","western"
+};
 
 void printHeader() {
     cout << "\n========================================\n";
@@ -41,12 +45,6 @@ bool hasGenre(const Movie& movie, string searchGenre) {
 }
 
 bool isValidGenre(string genre) {
-    string validGenres[23] = {
-        "action","adventure","animation","biography","comedy","crime",
-        "documentary","drama","family","fantasy","film-noir","history",
-        "horror","music","musical","mystery","news","romance","sci-fi",
-        "sport","thriller","war","western"
-    };
 
     for (string validGenre : validGenres) {
         if (genre == validGenre) {
@@ -57,7 +55,7 @@ bool isValidGenre(string genre) {
     return false;
 }
 
-void findMovies(const vector<Movie>& movies) {
+void findMovies(const vector<Movie>& movies, vector<btree> genreTrees) {
     string input;
     string genre;
     double minRating;
@@ -109,6 +107,7 @@ void findMovies(const vector<Movie>& movies) {
     cout << "\nSearching for " << genre << " movies rated ";
     cout << minRating << " to " << maxRating << "...\n\n";
 
+    cout << "\n \n \n MaxHeap Search: \n" << endl;
     // Build a MaxHeap of every movie that matches the genre and rating range.
     MaxHeap matchHeap;
     int matchCount = 0;
@@ -146,9 +145,32 @@ void findMovies(const vector<Movie>& movies) {
              << " | Rating: " << pool[i].rating
              << " | Votes: " << pool[i].numVotes << endl;
     }
+
+    cout << "\n \n \n BPlus Tree Search: \n" << endl;
+
+    // BPlus Tree search
+    vector<Movie> topMovies;
+    for (int i = 0; i < 23; i++) {
+        if (validGenres[i] == genre) {
+            topMovies = genreTrees[i].searchRange(minRating, maxRating);
+        }
+    }
+    int i = 1;
+    for (Movie movie: topMovies) {
+        cout << i<< "." << movie.title << "(" << movie.year << ")" << " | Rating: " <<movie.rating << " | Votes: " << movie.numVotes <<  endl;
+        i++;
+        if (i > showCount)
+            break;
+    }
+
+    if (topMovies.empty()) {
+        cout << "No movies found in that tree for this genre/range.\n";
+    }
+
+
 }
 
-void mainMenu(const vector<Movie>& movies) {
+void mainMenu(const vector<Movie>& movies, vector<btree> genreTrees) {
     string input;
 
     while (true) {
@@ -161,7 +183,7 @@ void mainMenu(const vector<Movie>& movies) {
         getline(cin, input);
 
         if (input == "1") {
-            findMovies(movies);
+            findMovies(movies, genreTrees);
         }
         else if (input == "2") {
             showAbout();
@@ -182,9 +204,11 @@ void mainMenu(const vector<Movie>& movies) {
 int main() {
     vector<Movie> movies = loadMoviesFromCSV("Movies.csv");
 
+    vector<btree> genreTrees = genreBPlusTrees(validGenres,movies);
+
     cout << "Loaded " << movies.size() << " movies successfully.\n";
 
-    mainMenu(movies);
+    mainMenu(movies, genreTrees);
 
     return 0;
 }
