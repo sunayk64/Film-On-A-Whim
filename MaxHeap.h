@@ -1,5 +1,7 @@
 #pragma once
 #include "Movie.h"
+#include "btree.h"
+
 #include <vector>
 using namespace std;
 
@@ -19,3 +21,6 @@ private:
     int leftChild(int index) const;
     int rightChild(int index) const;
 };
+
+
+vector<MaxHeap> genreMaxHeaps(vector<string> genres, vector<Movie> movies);

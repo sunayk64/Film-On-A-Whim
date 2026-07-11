@@ -1,4 +1,5 @@
 #include "MaxHeap.h"
+#include "btree.h"
 #include <stdexcept>
 #include <algorithm>
 
@@ -71,4 +72,24 @@ bool MaxHeap::isEmpty() const {
 
 int MaxHeap::size() const {
     return static_cast<int>(heap.size());
+}
+
+vector<MaxHeap> genreMaxHeaps(vector<string> genres, vector<Movie> movies) {
+    vector<MaxHeap> MaxHeaps;
+    for (int i = 0; i < genres.size(); i++) {
+        MaxHeap n;
+        MaxHeaps.push_back(n);
+    }
+    for (Movie m: movies) {
+        for (string g : m.genres) {
+            string lower = toLowerCase(g);
+            for (int j = 0; j < genres.size(); j++) {
+                if (genres[j] == lower) {
+                    MaxHeaps[j].insert(m);
+                    break;
+                }
+            }
+        }
+    }
+    return MaxHeaps;
 }
