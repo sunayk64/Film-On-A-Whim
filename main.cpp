@@ -29,19 +29,9 @@ void showAbout() {
     printHeader();
     cout << "\nFilm on a Whim helps users find random movie recommendations\n";
     cout << "based on a genre and IMDb rating range.\n\n";
-    cout << "Matching movies are loaded into a custom Max Heap so we can\n";
-    cout << "efficiently retrieve every result within your chosen genre\n";
-    cout << "and rating range. We then randomly select five of them so\n";
-    cout << "you get a actual random recommendation.\n";
-}
-
-bool hasGenre(const Movie& movie, string searchGenre) {
-    for (string genre : movie.genres) {
-        if (toLowerCase(genre) == searchGenre) {
-            return true;
-        }
-    }
-    return false;
+    cout << "Matching movies are retrieved using both a custom Max Heap\n";
+    cout << "and a B+ Tree. We then randomly select five results from\n";
+    cout << "each structure for comparison.\n";
 }
 
 bool isValidGenre(string genre) {
@@ -55,7 +45,10 @@ bool isValidGenre(string genre) {
     return false;
 }
 
-void findMovies(const vector<Movie>& movies, vector<btree> genreTrees,vector<MaxHeap> maxHeaps) {
+void findMovies(
+    const vector<btree>& genreTrees,
+    const vector<MaxHeap>& maxHeaps
+){
     string input;
     string genre;
     double minRating;
@@ -113,11 +106,21 @@ void findMovies(const vector<Movie>& movies, vector<btree> genreTrees,vector<Max
     vector<Movie> pool;
 
     int genreIndex = -1;
-    for (int gi = 0; gi < 23; gi++) {
+    for (size_t gi = 0; gi < validGenres.size(); gi++) {
         if (validGenres[gi] == genre) {
-            genreIndex = gi;
+            genreIndex = static_cast<int>(gi);
             break;
         }
+    }
+    if (genreIndex == -1 ||
+        genreIndex >= static_cast<int>(maxHeaps.size()) ||
+        genreIndex >= static_cast<int>(genreTrees.size())) {
+        cout << "Genre data is unavailable.\n";
+        return;
+    }
+    if (minRating > maxRating) {
+        cout << "Minimum rating cannot be greater than maximum rating.\n";
+        return;
     }
 
     MaxHeap heapCopy = maxHeaps[genreIndex];
@@ -145,32 +148,40 @@ void findMovies(const vector<Movie>& movies, vector<btree> genreTrees,vector<Max
              << " | Rating: " << pool[i].rating
              << " | Votes: " << pool[i].numVotes << endl;
     }
-
-    cout << "\n \n \n BPlus Tree Search: \n" << endl;
-
-    // BPlus Tree search
-    vector<Movie> topMovies;
-    for (int i = 0; i < 23; i++) {
-        if (validGenres[i] == genre) {
-            topMovies = genreTrees[i].searchRange(minRating, maxRating);
-        }
-    }
-    int i = 1;
-    for (Movie movie: topMovies) {
-        cout << i<< "." << movie.title << "(" << movie.year << ")" << " | Rating: " <<movie.rating << " | Votes: " << movie.numVotes <<  endl;
-        i++;
-        if (i > showCount)
-            break;
+    if (pool.empty()) {
+        cout << "No movies found in that heap for this genre/range.\n";
     }
 
-    if (topMovies.empty()) {
+    cout << "\n\n\nBPlus Tree Search:\n" << endl;
+
+    // Get every matching movie from the B+ Tree
+    vector<Movie> treePool =
+        genreTrees[genreIndex].searchRange(minRating, maxRating);
+
+    // Apply the same randomization afterward
+    shuffle(treePool.begin(), treePool.end(), rng);
+
+    int treeShowCount =
+        min(RESULT_COUNT, static_cast<int>(treePool.size()));
+
+    for (int i = 0; i < treeShowCount; i++) {
+    cout << i + 1 << ". " << treePool[i].title
+         << " (" << treePool[i].year << ")"
+         << " | Rating: " << treePool[i].rating
+         << " | Votes: " << treePool[i].numVotes << endl;
+    }
+
+    if (treePool.empty()) {
         cout << "No movies found in that tree for this genre/range.\n";
     }
 
 
 }
 
-void mainMenu(const vector<Movie>& movies, vector<btree> genreTrees, vector<MaxHeap> maxHeaps) {
+void mainMenu(
+    const vector<btree>& genreTrees,
+    const vector<MaxHeap>& maxHeaps
+){
     string input;
 
     while (true) {
@@ -183,7 +194,7 @@ void mainMenu(const vector<Movie>& movies, vector<btree> genreTrees, vector<MaxH
         getline(cin, input);
 
         if (input == "1") {
-            findMovies(movies, genreTrees,maxHeaps);
+            findMovies(genreTrees, maxHeaps);
         }
         else if (input == "2") {
             showAbout();
@@ -208,7 +219,7 @@ int main() {
 
     cout << "Loaded " << movies.size() << " movies successfully.\n";
 
-    mainMenu(movies, genreTrees,maxHeaps);
+    mainMenu(genreTrees, maxHeaps);
 
     return 0;
 }

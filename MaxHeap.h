@@ -1,8 +1,7 @@
 #pragma once
 #include "Movie.h"
-#include "btree.h"
-
 #include <vector>
+#include <string>
 using namespace std;
 
 class MaxHeap {
@@ -23,4 +22,7 @@ private:
 };
 
 
-vector<MaxHeap> genreMaxHeaps(vector<string> genres, vector<Movie> movies);
+vector<MaxHeap> genreMaxHeaps(
+    const vector<string>& genres,
+    const vector<Movie>& movies
+);

@@ -5,11 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "movie.h"
+#include "Movie.h"
 #include "btree.h"
 #include <algorithm>
-#include <random>
-#include <set>
 using namespace std;
 
 
@@ -153,31 +151,7 @@ Node* searchRecursive(Node* root, double minRating) {
 }
 
 
-
-vector<Movie> randomTen(vector<Movie>& m) {
-    if (m.size() <= 10) {
-        return m;
-    }
-    vector<Movie> topTen;
-    set<int> usedIndices;
-
-    static random_device rd;
-    static mt19937 gen(rd());
-    uniform_int_distribution<int> dist(0, m.size() - 1);
-
-    while (topTen.size() < 10) {
-        int idx = dist(gen);
-        if (usedIndices.count(idx) == 0) {
-            usedIndices.insert(idx);
-            topTen.push_back(m[idx]);
-        }
-    }
-    return topTen;
-}
-
-
-
-vector<Movie> btree::searchRange(double minRating, double maxRating) {
+vector<Movie> btree::searchRange(double minRating, double maxRating) const {
     // null guard added: prevents crash when this genre's tree has no movies inserted
     if (root == nullptr) {
         return {};
@@ -204,7 +178,7 @@ vector<Movie> btree::searchRange(double minRating, double maxRating) {
     }
 
 
-    return randomTen(m);
+    return m;
 }
 
 string toLowerCase(string text) {
@@ -212,16 +186,19 @@ string toLowerCase(string text) {
     return text;
 }
 
-vector<btree> genreBPlusTrees(vector<string> genres, vector<Movie> movies) {
+vector<btree> genreBPlusTrees(
+    const vector<string>& genres,
+    const vector<Movie>& movies
+) {
     vector<btree> bPlusTrees;
-    for (int i = 0; i < genres.size(); i++) {
+    for (size_t i = 0; i < genres.size(); i++) {
         btree n(32);
         bPlusTrees.push_back(n);
     }
-    for (Movie m: movies) {
-        for (string g : m.genres) {
+    for (const Movie& m : movies) {
+        for (const string& g : m.genres) {
             string lower = toLowerCase(g);
-            for (int j = 0; j < genres.size(); j++) {
+            for (size_t j = 0; j < genres.size(); j++) {
                 if (genres[j] == lower) {
                     bPlusTrees[j].insert(m);
                     break;

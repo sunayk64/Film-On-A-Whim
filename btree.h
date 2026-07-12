@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "movie.h"
+#include "Movie.h"
 using namespace std;
 
 struct Key {
@@ -27,7 +27,6 @@ struct Node {
     Node* next = nullptr;
 };
 
-vector<Movie> listTenMovies(vector<Movie> movies);
 
 class btree {
 private:
@@ -40,10 +39,13 @@ private:
 public:
     btree(int order);
     void insert(Movie m);
-    vector<Movie> searchRange(double minRating, double maxRating);
+    vector<Movie> searchRange(double minRating, double maxRating) const;
 };
 
-vector<btree> genreBPlusTrees(vector<string> genres, vector<Movie> movies);
+vector<btree> genreBPlusTrees(
+    const vector<string>& genres,
+    const vector<Movie>& movies
+);
 
 
 
